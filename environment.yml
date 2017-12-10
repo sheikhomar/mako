@@ -15,6 +15,7 @@ dependencies:
   - engarde
   - jupyter
   - ipython
+  - fastavro
   - pip:
     - sklearn-pandas
     - imbalanced-learn
