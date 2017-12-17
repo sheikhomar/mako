@@ -27,12 +27,11 @@ def store_schema(reader, out_path):
 
 
 def clean_record(record):
-    for key, value in list(record.items()):
-        if value is None:
-            del record[key]
-        elif isinstance(value, dict):
-            clean_record(value)
-    return record
+    new_record = {}
+    for key, value in record.items():
+        if value:
+            new_record[key] = record[key]
+    return new_record
 
 
 def task_download(url):
@@ -84,13 +83,27 @@ def task_convert_avro_file_to_json(file_path):
             logger.info('Writing to %s' % out_file_path)
             reader = avro.reader(in_file)
             store_schema(reader, schema_file_path)
+
             i = 0
+            json_str = ''
             for record in reader:
-                cr = clean_record(record.copy())
-                json_str = json.dumps(cr, separators=(',', ':')) + '\n'
+                cr = clean_record(record)
+                json_str += json.dumps(cr, separators=(',', ':')) + '\n'
+
+                # Write in batches
+                if i % 200 == 0:
+                    json_bytes = json_str.encode('utf-8')
+                    out_file.write(json_bytes)
+                    json_str = ''
+                    i = 0
+                else:
+                    i += 1
+
+            # Write the last part of the file
+            if len(json_str) > 0:
                 json_bytes = json_str.encode('utf-8')
                 out_file.write(json_bytes)
-                i += 1
+
 
     # We don't need the AVRO file anymore
     os.remove(file_path)
@@ -161,14 +174,14 @@ def main():
 
     # Note that we use two different executors since threads are good for I/O tasks,
     # while processes are good for CPU-bound tasks.
-    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as threadExecutor:
+    with ThreadPoolExecutor(max_workers=1) as threadExecutor:
         futures = []
         for url in urls:
             logger.info('Scheduling download task for %s' % url)
             future = threadExecutor.submit(task_download_and_extract, url)
             futures.append(future)
 
-        with ProcessPoolExecutor(max_workers=MAX_WORKERS) as processExecutor:
+        with ProcessPoolExecutor() as processExecutor:
             # Handle tasks as they complete
             for future in concurrent.futures.as_completed(futures):
                 try:
