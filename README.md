@@ -8,6 +8,24 @@ Project for the Managing Big Data course at University of Twente.
 This project uses make. To see available commands, simply run `make`.
 
 
+### Docker Image
+
+How to build it:
+```
+docker build -t mako .
+```
+
+How to run it:
+```
+docker run -v /tmp/data:/app/data/raw mako --help
+```
+
+How to debug it:
+```
+docker run -it --entrypoint /bin/bash mako
+```
+
+
 ## Project Organization
 
     ├── LICENSE
