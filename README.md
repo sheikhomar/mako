@@ -10,6 +10,8 @@ This project uses make. To see available commands, simply run `make`.
 
 ### Docker Image
 
+A prebuilt Docker image can be downloaded at [Docker Hub](https://hub.docker.com/r/sheikhomar/mako/).
+
 How to build it:
 ```
 docker build -t mako .
