@@ -10,6 +10,7 @@ import tarfile
 import fastavro as avro
 import json
 import gzip
+import re
 
 from dotenv import find_dotenv, load_dotenv
 
@@ -158,30 +159,63 @@ def handle_completed_download_task(executor):
             handle_completed_extract_task(executor, extract_dir)
 
 
-MAX_WORKERS = 4
+def parse_filters(filters):
+    year_dict = {}
+
+    for filter_str in filters:
+        year = filter_str[0:4]
+        month_day = filter_str[4:]
+        if year not in year_dict:
+            year_dict[year] = []
+        if len(month_day) > 0:
+            year_dict[year].append(month_day)
+
+    return year_dict
 
 
-@click.command()
-def main():
-    # extract_dir = os.path.join(project_dir, 'data', 'raw', 'openintel-alexa1m-20170107')
-    # convert_avro_files_to_json(extract_dir)
-    urls = [
-        'https://data.openintel.nl/data/alexa1m/2017/openintel-alexa1m-20170115.tar',
-        'https://data.openintel.nl/data/alexa1m/2017/openintel-alexa1m-20170116.tar',
-        'https://data.openintel.nl/data/alexa1m/2017/openintel-alexa1m-20170117.tar',
-        'https://data.openintel.nl/data/alexa1m/2017/openintel-alexa1m-20170118.tar'
-    ]
+def get_urls(data_set, filters):
+    urls = []
+    BASE_URL = 'https://data.openintel.nl/data/'
+    m = parse_filters(filters)
+    logger.info(m)
+    for year in m.keys():
+        month_days = m[year]
+        index_url = BASE_URL + data_set + '/' + year + '/'
 
+        try:
+            logger.info('Dowloading %s' % index_url)
+            page = urllib.request.urlopen(index_url)
+            html = page.read().decode('utf-8')
+        except Exception as exc:
+            logger.error('Failed to download %s' % index_url)
+            logger.error(exc)
+            continue
+
+        logger.info('Parsing %s' % index_url)
+        prefix = 'openintel-' + data_set + '-' + year
+        if len(month_days) > 0:
+            prefix += '(' + '|'.join(month_days) + ')'
+        else:
+            prefix += '(.)'
+
+        relative_urls = re.findall(r'href=[\'"]?(' + prefix + '[^\'" >]+)', html)
+        urls.extend(map(lambda url: index_url + url[0], relative_urls))
+
+    return urls
+
+
+def process(urls, no_threads=1, no_processes=2):
+    logger.info("Begin processing...")
     # Note that we use two different executors since threads are good for I/O tasks,
     # while processes are good for CPU-bound tasks.
-    with ThreadPoolExecutor(max_workers=1) as threadExecutor:
+    with ThreadPoolExecutor(max_workers=no_threads) as threadExecutor:
         futures = []
         for url in urls:
             logger.info('Scheduling download task for %s' % url)
             future = threadExecutor.submit(task_download_and_extract, url)
             futures.append(future)
 
-        with ProcessPoolExecutor() as processExecutor:
+        with ProcessPoolExecutor(max_workers=no_processes) as processExecutor:
             # Handle tasks as they complete
             for future in concurrent.futures.as_completed(futures):
                 try:
@@ -193,6 +227,18 @@ def main():
                     handle_completed_extract_task(processExecutor, extract_dir)
 
     logger.info('Work done')
+
+
+@click.command()
+@click.option('--data_set', '-d', help='The dataset to prepare. Default: alexa1m', default='alexa1m',  type=click.Choice(['alexa1m', 'open-tld']))
+@click.option('--filters', '-f', multiple=True, help='Format is YYYYMMDD where MM and DD are optional. Default: 20170101', default=['20170101'])
+@click.option('--threads', '-t', help='Number of simultaneous downloads. Default: 1', default=1)
+@click.option('--cores', '-c', help='Number of CPU cores to use. Default: 2', default=2)
+def main(data_set, filters, threads, cores):
+    logger.info('Processing data set "%s" with filters [%s]' % (data_set, filters))
+    urls = get_urls(data_set, filters)
+    logger.info('Filter generated %s URL(s)' % len(urls))
+    process(urls, threads, cores)
 
 
 if __name__ == '__main__':
