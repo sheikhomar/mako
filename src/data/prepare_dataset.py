@@ -247,7 +247,10 @@ if __name__ == '__main__':
 
     # not used in this stub but often useful for finding various files
     project_dir = os.path.join(os.path.dirname(__file__), os.pardir, os.pardir)
+
     data_raw_dir = os.path.join(project_dir, 'data', 'raw')
+    if not os.path.exists(data_raw_dir):
+        os.makedirs(data_raw_dir)
 
     # find .env automagically by walking up directories until it's found, then
     # load up the .env entries as environment variables
