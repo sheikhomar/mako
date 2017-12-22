@@ -49,7 +49,7 @@ def main(data_set, filters, path):
         if os.path.exists(local_path):
             files = [f for f in os.listdir(local_path) if f.endswith('.json.gz')]
             no_files = len(files)
-            c = Fore.GREEN if no_files == 11 else Fore.LIGHTYELLOW_EX
+            c = Fore.GREEN if no_files == 11 else Fore.YELLOW
             print(' Local files: ', end='')
             print(_color(str(no_files), c), end='')
 
