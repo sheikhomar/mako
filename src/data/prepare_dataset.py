@@ -5,14 +5,14 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 import click
 import logging
 import urllib.request
-import sys
 import tarfile
 import fastavro as avro
 import json
 import gzip
-import re
 
 from dotenv import find_dotenv, load_dotenv
+
+from url_builder import UrlBuilder
 
 logger = logging.getLogger(__name__)
 
@@ -159,51 +159,6 @@ def handle_completed_download_task(executor):
             handle_completed_extract_task(executor, extract_dir)
 
 
-def parse_filters(filters):
-    year_dict = {}
-
-    for filter_str in filters:
-        year = filter_str[0:4]
-        month_day = filter_str[4:]
-        if year not in year_dict:
-            year_dict[year] = []
-        if len(month_day) > 0:
-            year_dict[year].append(month_day)
-
-    return year_dict
-
-
-def get_urls(data_set, filters):
-    urls = []
-    BASE_URL = 'https://data.openintel.nl/data/'
-    m = parse_filters(filters)
-    logger.info(m)
-    for year in m.keys():
-        month_days = m[year]
-        index_url = BASE_URL + data_set + '/' + year + '/'
-
-        try:
-            logger.info('Dowloading %s' % index_url)
-            page = urllib.request.urlopen(index_url)
-            html = page.read().decode('utf-8')
-        except Exception as exc:
-            logger.error('Failed to download %s' % index_url)
-            logger.error(exc)
-            continue
-
-        logger.info('Parsing %s' % index_url)
-        prefix = 'openintel-' + data_set + '-' + year
-        if len(month_days) > 0:
-            prefix += '(' + '|'.join(month_days) + ')'
-        else:
-            prefix += '(.)'
-
-        relative_urls = re.findall(r'href=[\'"]?(' + prefix + '[^\'" >]+)', html)
-        urls.extend(map(lambda url: index_url + url[0], relative_urls))
-
-    return urls
-
-
 def process(urls, no_threads=1, no_processes=2):
     logger.info("Begin processing...")
     # Note that we use two different executors since threads are good for I/O tasks,
@@ -236,7 +191,8 @@ def process(urls, no_threads=1, no_processes=2):
 @click.option('--cores', '-c', help='Number of CPU cores to use. Default: 2', default=2)
 def main(data_set, filters, threads, cores):
     logger.info('Processing data set "%s" with filters [%s]' % (data_set, filters))
-    urls = get_urls(data_set, filters)
+    ub = UrlBuilder()
+    urls = ub.get_urls(data_set, filters)
     logger.info('Filter generated %s URL(s)' % len(urls))
     process(urls, threads, cores)
 
