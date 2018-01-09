@@ -9,6 +9,7 @@ import tarfile
 import fastavro as avro
 import json
 import gzip
+import shutil
 
 from dotenv import find_dotenv, load_dotenv
 
@@ -43,7 +44,10 @@ def task_download(url):
     file_path = os.path.join(data_raw_dir, file_name)
 
     # Actual download file
-    urllib.request.urlretrieve(url, file_path)
+    partial_file_path = file_path + '.partial'
+    urllib.request.urlretrieve(url, partial_file_path)
+
+    shutil.move(partial_file_path, file_path)
 
     logger.info('Downloaded to %s' % file_path)
     return file_path
@@ -104,7 +108,6 @@ def task_convert_avro_file_to_json(file_path):
             if len(json_str) > 0:
                 json_bytes = json_str.encode('utf-8')
                 out_file.write(json_bytes)
-
 
     # We don't need the AVRO file anymore
     os.remove(file_path)
