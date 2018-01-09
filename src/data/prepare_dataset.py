@@ -139,29 +139,6 @@ def handle_completed_extract_task(executor, extract_result):
             logger.info('Converted file: %s' % file_path)
 
 
-def handle_completed_download_task(executor):
-    # Find files to extract
-    archives = get_paths(data_raw_dir, '.tar')
-
-    # Schedule extraction tasks
-    futures = []
-    for archive in archives:
-        logger.info('Scheduling extract job task for %s' % archive)
-        future = executor.submit(task_extract_archive, archive)
-        futures.append(future)
-
-    # Handle tasks as they complete
-    for future in concurrent.futures.as_completed(futures):
-        try:
-            extract_dir = future.result()
-        except Exception as exc:
-            logger.error('handle_completed_extract_task: Got an exception: %s' % exc)
-            logger.error(exc, exc_info=True)
-        else:
-            logger.info('Extract to %s' % extract_dir)
-            handle_completed_extract_task(executor, extract_dir)
-
-
 def process(urls, no_threads=1, no_processes=2):
     logger.info("Begin processing...")
     # Note that we use two different executors since threads are good for I/O tasks,
