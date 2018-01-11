@@ -1,3 +1,8 @@
+
+
+# Command to run this script on the CTIT cluster:
+# $ spark-submit --master yarn --deploy-mode cluster --packages com.databricks:spark-csv_2.10:1.5.0 src/data/spark/aggregate_rankings.py
+
 from pyspark import SparkContext
 from pyspark.sql import SQLContext
 from pyspark.sql.functions import udf
@@ -9,7 +14,7 @@ def convert_rank(str):
         return 1
     return int(str)
 
-sc = SparkContext(appName="Aggregate Alexa Rankings January 2017")
+sc = SparkContext(appName="Aggregate Alexa Rankings")
 sc.setLogLevel("ERROR")
 sqlContext = SQLContext(sc)
 
@@ -18,7 +23,7 @@ schema = StructType([
     StructField("domain", StringType(), False)
 ])
 df = sqlContext.read.format("com.databricks.spark.csv").option("header", "false").option("inferSchema", "false").schema(schema)
-df = df.load('/user/s1962523/alexa1m-rankings/Alexa_2017-01-*.tar.gz')
+df = df.load('/user/s1962523/alexa1m-rankings/Alexa_*.tar.gz')
 
 convert_rank_udf = udf(convert_rank, IntegerType())
 df = df.withColumn('rank', convert_rank_udf(df['rank_str'])).drop("rank_str")
@@ -33,4 +38,4 @@ df = df.groupby('domain').agg(
         func.kurtosis('rank').alias('kurtosis_rank')
         )
 
-df.write.format('com.databricks.spark.csv').save('/user/s1962523/agg-alexa-2017-01')
+df.write.format('com.databricks.spark.csv').save('/user/s1962523/agg-alexa')
