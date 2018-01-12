@@ -7,6 +7,7 @@ from pyspark import SparkContext
 from pyspark.sql import SQLContext
 from pyspark.sql.types import *
 import json
+import datetime
 
 schema = StructType([
     StructField("query_type", StringType(), False),
@@ -126,20 +127,37 @@ def tuplise(row):
     query_name = obj['query_name']
     if query_name.startswith('www.'):
         query_name = query_name[4:]  # Remove 'www.' prefix
+    if query_name.endswith('.'):
+        query_name = query_name[:-1]
     date = datetime.datetime.fromtimestamp(obj['timestamp'] / 1000)
-    return query_name, [obj]
+    del obj['timestamp']
+    key = '%s-%s' % (query_name, date.strftime('%Y%m%d'))
+    return key, [obj]
+
+
+def to_json(tuple):
+    key, records = tuple
+    sep = key.rfind('-')
+    domain = key[:sep]
+    date = key[sep+1:]
+    new_obj = {
+        'domain': domain,
+        'date': date,
+        'records': records
+    }
+    return json.dumps(new_obj)
 
 
 sc = SparkContext(appName="DNS Records Grouping")
 sc.setLogLevel("ERROR")
 sqlContext = SQLContext(sc)
 
-in_path  = '/user/s1962523/openintel-alexa1m/openintel-alexa1m-20171230/*.json.gz'
-out_path = '/user/s1962523/alexa1m-combined-v1'
+in_path  = '/user/s1962523/openintel-alexa1m/openintel-alexa1m-201711*/*.json.gz'
+out_path = '/user/s1962523/alexa1m-combined-201711'
 df = sqlContext.read.option("inferSchema", "false").schema(schema).json(in_path)
 rdd = df.rdd
 rdd = rdd.map(tuplise)
 rdd = rdd.reduceByKey(lambda a, n: a + n)
-rdd = rdd.map(lambda tup: json.dumps({'domain': tup[0], 'records': tup[1]}))
+rdd = rdd.map(to_json)
 rdd.saveAsTextFile(path=out_path,
                    compressionCodecClass="org.apache.hadoop.io.compress.GzipCodec")
