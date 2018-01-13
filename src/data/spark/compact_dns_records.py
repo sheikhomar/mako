@@ -241,7 +241,7 @@ sc = SparkContext(appName="Compacts DNS Records November 2017")
 sc.setLogLevel("ERROR")
 sqlContext = SQLContext(sc)
 
-in_path  = '/user/s1962523/openintel-alexa1m/openintel-alexa1m-201711/*.json.gz'
+in_path  = '/user/s1962523/openintel-alexa1m/openintel-alexa1m-201711*/*.json.gz'
 out_path = '/user/s1962523/alexa1m-compact-201711'
 df = sqlContext.read.option("inferSchema", "false").schema(schema).json(in_path)
 rdd = df.rdd
