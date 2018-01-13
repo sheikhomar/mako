@@ -1,7 +1,7 @@
 # This script cleans, compacts and groups DNS records for Alexa1m domains by name and date.
 #
 # Command to run this script on the CTIT cluster:
-# $ spark-submit --master yarn --deploy-mode cluster src/data/spark/restructure_alexa1m_data.py
+# $ spark-submit --master yarn --deploy-mode cluster --num-executors 300 src/data/spark/restructure_alexa1m_data.py
 
 from pyspark import SparkContext
 from pyspark.sql import SQLContext
