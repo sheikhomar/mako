@@ -26,23 +26,22 @@ def main():
 	calculator = Calculator(rdd_pipe)
 	get_basic_stats_and_filter_data(calculator)
 	get_specific_stats(calculator)
-	#save_results()
+	save_results()
 	save_leftovers(calculator)
 
 def get_basic_stats_and_filter_data(calculator):
-	#results["total"] = calculator.size()
+	results["total"] = calculator.size()
 	calculator.remove_non_txt_records()
-	#results["txt"] = calculator.size()
+	results["txt"] = calculator.size()
 	calculator.remove_empty_text_records()
-	#results["correct_txt"] = calculator.size()
+	results["correct_txt"] = calculator.size()
 
 def get_specific_stats(calculator):
 	results["specific"] = calculator.get_specific_stats_for_regex_dictionary(calculator.regexes)
 
 def save_results():
-	with open("/user/s2012146/" + day + '_results.txt', 'w') as file:
-		file.write(json.dumps(results))
-
+	sc.parallelize([results]).saveAsTextFile("/user/s2012146/" + day + "_results.txt")
+	
 def save_leftovers(calculator):
 	calculator \
 		.get_sorted_remaining_records() \
