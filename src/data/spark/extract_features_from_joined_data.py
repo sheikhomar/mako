@@ -4,7 +4,7 @@
 from pyspark import SparkContext
 import json
 
-sc = SparkContext(appName="Join and Extract Features November 2016")
+sc = SparkContext(appName="Extract Features November 2016")
 sc.setLogLevel("ERROR")
 
 
@@ -46,7 +46,7 @@ def extract_features(input_tup):
     # Generate the output list
     output_list = [domain_name, date_str, str(alexa_rank), str(len(records))]
     records_str = ';'.join(records)
-    for rtype in ['SOA', 'NS', 'A', 'AAAA', 'CNAME', 'MX', 'SPF', 'DS', 'PTR', 'DNSKEY']:
+    for rtype in ['SOA', 'NS', 'A', 'AAAA', 'CNAME', 'MX', 'TXT', 'SPF', 'PTR', 'DNSKEY', 'DS', 'RRSIG', 'CAA', 'NSEC']:
         count = records_str.count(' %s ' % rtype)
         output_list.append(str(count))
     return ','.join(output_list)
