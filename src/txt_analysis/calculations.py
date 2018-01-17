@@ -16,7 +16,7 @@ class Calculator:
 			"dmarc": [re.compile(r"v=DMARC1.*", re.IGNORECASE)],
 		},
 		"domain-identifiers": { # verifying ownership of the domain, so the services can work
-			"google": [re.compile(r"google-site-verification.*")],
+			"google": [re.compile(r"_?google-site-verification.*")],
 			"ms": [
 				re.compile(r"MS.*", re.IGNORECASE), 
 				re.compile(r".*onmicrosoft\.com$"),
@@ -24,21 +24,36 @@ class Calculator:
 				re.compile(r"v=verifydomain.*")
 			],
 			"globalsign": [re.compile(r"_?globalsign-domain-verification.*")],
-			"amazon": [re.compile(r"amazonses.*")],
+			"amazon": [re.compile(r"_?amazonses.*")],
 			"yandex": [re.compile(r"yandex-verification.*")],
 			"mailru": [re.compile(r"mailru.*")],
 			"zoho": [re.compile(r"zoho-verification.*")],
 			"adobe": [re.compile(r"adobe-idp-site-verification.*")],
 			"sendinblue": [re.compile(r"Sendinblue-code.*")],
-			"loaderio": [re.compile(r"loaderio.*")]
+			"loaderio": [re.compile(r"loaderio.*")],
+			"atlassian": [re.compile(r"atlassian-domain-verification.*")],
+			"citrix": [re.compile(r"citrix.*")],
+			"facebook": [re.compile(r"facebook-domain-verification.*")],
+			"pardot": [re.compile(r"pardot_.*")],
+			"status_page": [re.compile(r"status_page_domain_verification.*")],
+			"proofpoint": [re.compile(r"ppe-.*")],
+			"firebase": [re.compile(r"firebase.*")],
+			"dropbox": [re.compile(r"dropbox-domain-verification.*")]
 		},
 		"keys": {
-			"base64_64bytes": [re.compile(r"[A-z0-9+/]{86}==$")], 
+			"base64_64bytes": [re.compile(r"[A-z0-9+/]{86}==$")],
+			"base64_32bytes": [re.compile(r"[A-z0-9+/]{43}=$")],
 			"hex_16bytes": [re.compile(r"[A-Fa-f0-9]{32}$")],
+			"hex_32bytes": [re.compile(r"[A-Fa-f0-9]{64}$")],
 			"hex_40_42": [re.compile(r"[A-Fa-f0-9]{40,42}$")],
-			"dec_9_dec_678": [re.compile(r"\d{9}-\d{7,8}$")],
-			"rsa": [re.compile(r"k=rsa.*")]
+			"hex_8-4-4-4-12": [
+				re.compile(r"[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}$")
+			],
+			"dec_9_dec_678": [re.compile(r"\d{9}-\d{6,8}$")],
+			"rsa": [re.compile(r"k=rsa.*")],
+			"az_09_26": [re.compile(r"[A-z0-9]{26}$")]
 		},
+		"docusign": [re.compile(r"docusign.*")],
 		"alias": [re.compile(r"ALIAS for.*")], # alias in TXT
 		"i*m": [re.compile(r"i=\d{3}&m.*")], # no idea
 		"malt": [re.compile(r"MAlt.*")], # 0 break something (usually mail)
