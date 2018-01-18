@@ -35,7 +35,7 @@ class Calculator:
 			"citrix": [re.compile(r"citrix.*")],
 			"facebook": [re.compile(r"facebook-domain-verification.*")],
 			"pardot": [re.compile(r"pardot_.*")],
-			"status_page": [re.compile(r"status_page_domain_verification.*")],
+			"status_page": [re.compile(r"status-page-domain-verification.*")],
 			"proofpoint": [re.compile(r"ppe-.*")],
 			"firebase": [re.compile(r"firebase.*")],
 			"dropbox": [re.compile(r"dropbox-domain-verification.*")]
