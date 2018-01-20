@@ -1,9 +1,10 @@
 # Command to run this script on the CTIT cluster:
-# $ spark-submit --master yarn --deploy-mode cluster src/data/spark/extract_features_from_joined_data_day.py
+# $ spark-submit --master yarn --deploy-mode cluster src/data/spark/extract_features_from_joined_data_day.py -d 20161101
 
 from pyspark import SparkContext
 import json
 from datetime import datetime
+import argparse
 
 
 def convert_rank(rank_field):
@@ -49,9 +50,24 @@ def to_csv_line(input_tup):
     return ','.join(output_list)
 
 
-DATE = datetime.strptime('2016-11-01', '%Y-%m-%d')
+def only_valid_date(input_str):
+    try:
+        return datetime.strptime(input_str, '%Y%m%d')
+    except ValueError:
+        raise argparse.ArgumentTypeError('Please enter a valid date.')
 
-sc = SparkContext(appName='Extract Features %s' % DATE.strftime('%Y-%m-%d'))
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-d',
+                    '--day',
+                    help='Specifies that the day to extract features. Format: YYYYMMDD',
+                    required=True,
+                    type=only_valid_date)
+
+arguments = parser.parse_args()
+DATE = arguments.day
+
+sc = SparkContext(appName='Extract Features (%s)' % DATE.strftime('%Y-%m-%d'))
 sc.setLogLevel("ERROR")
 
 in_path = '/user/s1962523/alexa1m-rankings/Alexa_%s.tar.gz' % DATE.strftime('%Y-%m-%d')
