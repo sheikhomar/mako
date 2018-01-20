@@ -83,6 +83,6 @@ records_rdd = records_rdd.map(tokinise_records)
 joined_rdd = rankings_rdd.join(records_rdd)
 joined_rdd = joined_rdd.map(to_csv_line)
 
-out_path = '/user/s1962523/openintel-alexa1m-ranking-' % DATE.strftime('%Y-%m-%d')
+out_path = '/user/s1962523/openintel-alexa1m-ranking-%s' % DATE.strftime('%Y-%m-%d')
 joined_rdd.saveAsTextFile(path=out_path,
                           compressionCodecClass="org.apache.hadoop.io.compress.GzipCodec")
