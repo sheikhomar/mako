@@ -1,3 +1,1 @@
-for d in 201*/; do
-	cat ${d}* > "${d%????}.txt"
-done
+for d in 201*/; do cat ${d}part* > "${d}.txt"; done

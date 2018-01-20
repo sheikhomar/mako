@@ -13,43 +13,32 @@ sc = SparkContext(appName="TXT analysis")
 sc.setLogLevel("ERROR")
 sqlContext = SQLContext(sc)
 
-DIRECTORY_PATH = "/user/s1962523/openintel-alexa1m/openintel-alexa1m-"
-
 parser = argparse.ArgumentParser()
 parser.add_argument("--day", help="The day to calculate statistics for. Format: YYYYMMDD", type=str)
 arguments = parser.parse_args()
 day = arguments.day
-results = {"day":day}
+path_regex = "/user/s1962523/openintel-alexa1m/openintel-alexa1m-" + day + "/*json.gz"
 
 def main():
-	rdd_pipe = get_necessary_data(day)
-	calculator = Calculator(rdd_pipe)
+	calculator = Calculator(get_data())
 	get_basic_stats_and_filter_data(calculator)
 	get_specific_stats(calculator)
-	save_results()
-	save_leftovers(calculator)
+	get_sensitive_data(calculator)
 
 def get_basic_stats_and_filter_data(calculator):
-	results["total"] = calculator.size()
-	calculator.remove_non_txt_records()
-	results["txt"] = calculator.size()
-	calculator.remove_empty_text_records()
-	results["correct_txt"] = calculator.size()
+	save_rdd(calculator.count_basic_stats(), "basic")
+	calculator.filter_data()
 
 def get_specific_stats(calculator):
-	results["specific"] = calculator.get_specific_stats_for_regex_dictionary(calculator.regexes)
+	save_rdd(calculator.get_specific_stats(), "specific")
 
-def save_results():
-	sc.parallelize([results]).saveAsTextFile("/user/s2012146/" + day + "_results.txt")
-	
-def save_leftovers(calculator):
-	calculator \
-		.get_sorted_remaining_records() \
-		.map(lambda (text, name): text + "\t" + name) \
-		.saveAsTextFile("/user/s2012146/" + day + "_log.txt")
+def get_sensitive_data(calculator):
+	save_rdd(calculator.get_sensitive_data(), "sensitive")
 
-def get_necessary_data(day):
-	path_regex = DIRECTORY_PATH + day + "/*json.gz"
+def save_rdd(rdd, filename):
+	rdd.saveAsTextFile("/user/s2012146/" + day + "_" + filename)
+
+def get_data():
 	rdd_pipe = (
 		sqlContext
 		.read.option("inferSchema", "false")
